@@ -1,11 +1,7 @@
 /* Create department dictionary */
 DROP TABLE IF EXISTS DepDictionary
 CREATE TABLE DepDictionary
-(
-    Department INT,
-	DepartmentNew INT,
-    DepartmentNewName NVARCHAR (50)
-	)
+(Department INT, DepartmentNew INT, DepartmentNewName NVARCHAR (50))
 GO
 
 /* Set dictionary values */
@@ -58,72 +54,44 @@ GO
 
 /* AVERAGE MARGIN BY DEPARTMENT */
 /**********************************************************************/
-
 /* Get updated department names */
-DROP VIEW IF EXISTS ProductsNewDep
+DROP VIEW IF EXISTS    ProductsNewDep
 GO
-CREATE VIEW ProductsNewDep AS
-SELECT 
-    DepDictionary.DepartmentNew,
-	DepDictionary.Department,
-	tblProducts.Stocked,
-	tblProducts.SupplierCost,
-	tblProducts.PackQuantity, 
-	tblProducts.CurrentSell,
-	tblProducts.WeeklySales,
-	tblProducts.Description
-FROM
-    DepDictionary
-INNER JOIN tblProducts ON tblProducts.Department=DepDictionary.Department;
-	GO
-
+CREATE VIEW            ProductsNewDep AS
+SELECT                 DepDictionary.DepartmentNew, DepDictionary.Department, tblProducts.Stocked,
+	               tblProducts.SupplierCost, tblProducts.PackQuantity, tblProducts.CurrentSell,
+	               tblProducts.WeeklySales, tblProducts.Description
+FROM                   DepDictionary
+INNER JOIN             tblProducts ON tblProducts.Department=DepDictionary.Department;
+GO
 /* Filtered table */
-DROP TABLE IF EXISTS ProductsNewDepPrelim
-SELECT
-     Department,
-     CAST(DepartmentNew AS INT)[DepartmentNew], 
-	 SupplierCost, 
-	 (PackQuantity*CurrentSell) AS Revenue,
-	 Description,
-	 WeeklySales
-INTO
-	ProductsNewDepPrelim
-FROM 
-    ProductsNewDep
-WHERE
-    Stocked = 1 AND DepartmentNew IS NOT NULL AND SupplierCost > 0
-	AND NOT(Description = 'LIPTON ICE TEA PEACH PM1') AND NOT(Description = 'DIET COKE PM1.75')
-	AND NOT(Description = 'MOUNTAIN DEW REGULAR PM1.15') AND NOT(Description = 'PEPSI REGULAR')  
-
+DROP TABLE IF EXISTS   ProductsNewDepPrelim
+SELECT                 Department, CAST(DepartmentNew AS INT)[DepartmentNew], SupplierCost, 
+                       (PackQuantity*CurrentSell) AS Revenue, Description, WeeklySales
+INTO                   ProductsNewDepPrelim
+FROM                   ProductsNewDep
+WHERE                  Stocked = 1 AND DepartmentNew IS NOT NULL AND SupplierCost > 0
+                       AND NOT(Description = 'LIPTON ICE TEA PEACH PM1') AND NOT(Description = 'DIET COKE PM1.75')
+                       AND NOT(Description = 'MOUNTAIN DEW REGULAR PM1.15') AND NOT(Description = 'PEPSI REGULAR')  
 GO
-
 /* Results table  */ 
-DROP TABLE IF EXISTS DepAvMar
+DROP TABLE IF EXISTS   DepAvMar
 GO
-SELECT   
-    DepartmentNew,
-    ROUND(AVG(((Revenue-SupplierCost)/NULLIF(Revenue,0))*100),1) AS AvMargin
-INTO
-    DepAvMar
-FROM 
-     ProductsNewDepPrelim
-GROUP BY 
-    DepartmentNew
-ORDER BY 
-	DepartmentNew
-
+SELECT                 DepartmentNew,
+                       ROUND(AVG(((Revenue-SupplierCost)/NULLIF(Revenue,0))*100),1) AS AvMargin
+INTO                   DepAvMar
+FROM                   ProductsNewDepPrelim
+GROUP BY               DepartmentNew
+ORDER BY               DepartmentNew
 GO
 
 /* BEST SELLER BY DEPARTMENT */
 /****************************************************************************/
-
 /* Results table */
 DROP VIEW IF EXISTS DepBestSellPrelim
 GO
 CREATE VIEW DepBestSellPrelim AS
-SELECT   
-    DepartmentNew,
-    MAX(WeeklySales) AS WeeklySales
+SELECT   DepartmentNew, MAX(WeeklySales) AS WeeklySales
 FROM 
      ProductsNewDepPrelim
 GROUP BY
